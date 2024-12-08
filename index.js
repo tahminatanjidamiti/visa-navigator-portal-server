@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -30,6 +30,47 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
+
+        const visaCollection = client.db('visaDB').collection('visas'); 
+        const userCollection = client.db('visaDB').collection('users');
+
+        // Get All visas
+        app.get('/all_visas', async (req, res) => {
+            const {email} = req.query;
+            const cursor = visaCollection.find({ email })
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+        // Get the latest 6 all_visas
+        app.get('/all_visas', async (req, res) => {
+            const cursor = visaCollection.find().sort({ _id: -1 }).limit(6); // Sort by _id descending to get the latest
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // Get details of a specific visa by ID
+        app.get('/all_visas/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await visaCollection.findOne(query);
+            res.send(result);
+        });
+        // Get my added visa by Email
+        app.get('/all_visas/:email', async (req, res) => {
+            const cursor = visaCollection.find()
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // Create a new visa
+        app.post('/all_visas', async (req, res) => {
+            const newVisa = req.body;
+            const result = await visaCollection.insertOne(newVisa);
+            res.send(result);
+        });
+
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
