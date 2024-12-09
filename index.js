@@ -42,6 +42,13 @@ async function run() {
             res.send(result);
         });
 
+        //Get my added Visas
+        app.get('/my_added_visas', async (req, res) => {
+            const { email } = req.query;
+            const cursor = visaCollection.find({ email })
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         //Get my visa application
         app.get('/my_visa_application', async (req, res) => {
@@ -58,8 +65,6 @@ async function run() {
             res.send(result);
         });
 
-        
-
         // Get details of a specific visa by ID
         app.get('/all_visas/:id', async (req, res) => {
             const id = req.params.id;
@@ -67,7 +72,7 @@ async function run() {
             const result = await visaCollection.findOne(query);
             res.send(result);
         });
-        
+
 
         // Create a new visa
         app.post('/all_visas', async (req, res) => {
