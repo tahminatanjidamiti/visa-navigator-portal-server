@@ -31,16 +31,19 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
-        const visaCollection = client.db('visaDB').collection('visas'); 
-        const userCollection = client.db('visaDB').collection('users');
+        const visaCollection = client.db('visaDB').collection('visas');
+        const applicationCollection = client.db('visaDB').collection('application');
+
 
         // Get All visas
         app.get('/all_visas', async (req, res) => {
-            const {email} = req.query;
-            const cursor = visaCollection.find({ email })
+            const cursor = visaCollection.find()
             const result = await cursor.toArray();
             res.send(result);
         });
+
+        
+
         // Get the latest 6 all_visas
         app.get('/all_visas', async (req, res) => {
             const cursor = visaCollection.find().sort({ _id: -1 }).limit(6); // Sort by _id descending to get the latest
@@ -68,6 +71,30 @@ async function run() {
             const result = await visaCollection.insertOne(newVisa);
             res.send(result);
         });
+
+        // Update a visa
+        app.put('/all_visas/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedVisa = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const visa = {
+                $set: {
+                    ...updatedVisa,
+                }
+            };
+            const result = await visaCollection.updateOne(filter, visa, options);
+            res.send(result);
+        });
+
+        // Delete a visa
+        app.delete('/all_visas/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await visaCollection.deleteOne(query);
+            res.send(result);
+        });
+
 
 
 
