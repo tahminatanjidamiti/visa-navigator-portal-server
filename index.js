@@ -58,12 +58,7 @@ async function run() {
             res.send(result);
         });
 
-        // Get Method for my added visa by Email
-        app.get('/all_visas/:email', async (req, res) => {
-            const cursor = visaCollection.find()
-            const result = await cursor.toArray();
-            res.send(result);
-        });
+        
 
         // Get details of a specific visa by ID
         app.get('/all_visas/:id', async (req, res) => {
