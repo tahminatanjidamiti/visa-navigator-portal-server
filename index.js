@@ -65,7 +65,12 @@ async function run() {
             const result = await visaCollection.findOne(query);
             res.send(result);
         });
-       
+        // Get my added visa by Email
+        app.get('/all_visas/:email', async (req, res) => {
+            const cursor = visaCollection.find()
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         // Create a new visa
         app.post('/all_visas', async (req, res) => {
