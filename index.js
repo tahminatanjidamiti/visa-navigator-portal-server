@@ -42,7 +42,14 @@ async function run() {
             res.send(result);
         });
 
-        
+
+        //Get my visa application
+        app.get('/my_visa_application', async (req, res) => {
+            const { email } = req.query;
+            const cursor = applicationCollection.find({ applicant_email: email })
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         // Get the latest 6 all_visas
         app.get('/all_visas', async (req, res) => {
