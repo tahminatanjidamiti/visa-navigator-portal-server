@@ -29,7 +29,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const visaCollection = client.db('visaDB').collection('visas');
         const applicationCollection = client.db('visaDB').collection('application');
@@ -37,36 +37,49 @@ async function run() {
 
         // Get All visas
         app.get('/all_visas', async (req, res) => {
-            const cursor = visaCollection.find()
+            const visaType = req.query.type; // Optional query parameter
+            const query = visaType ? { visa_type: visaType } : {};
+            const cursor = visaCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         });
+        // Get visas by types
+        app.get('/visaTypes', async (req, res) => {
+            const distinctTypes = await visaCollection.distinct('visa_type');
+            res.send(distinctTypes);
+        });
 
         //Get my added Visas
-        app.get('/my_added_visas', async (req, res) => {
-            const { email } = req.query;
+        app.get('/all_visas/:email', async (req, res) => {
+            const email = req.params.email;
             const cursor = visaCollection.find({ email })
             const result = await cursor.toArray();
             res.send(result);
         });
 
         //Get my visa application
-        app.get('/my_visa_application', async (req, res) => {
-            const { email } = req.query;
-            const cursor = applicationCollection.find({ applicant_email: email })
+        app.get('/visaApplication/:email', async (req, res) => {
+            const email = req.params.email;
+            const searchParams = req.query.searchParams || "";
+
+            const query = {
+                email: email,
+                country_name: { $regex: searchParams, $options: "i" },
+            };
+            const cursor = applicationCollection.find(query)
             const result = await cursor.toArray();
             res.send(result);
         });
 
         // Get the latest Six visas
-        app.get('/all_visas', async (req, res) => {
-            const cursor = visaCollection.find().sort({ _id: -1 }).limit(6); // Sort by _id descending to get the latest
+        app.get('/latestVisas', async (req, res) => {
+            const cursor = visaCollection.find().sort({ _id: -1 }).limit(6);
             const result = await cursor.toArray();
             res.send(result);
         });
 
         // Get details of a specific visa by ID
-        app.get('/all_visas/:id', async (req, res) => {
+        app.get('/visa_details/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await visaCollection.findOne(query);
@@ -81,18 +94,34 @@ async function run() {
             res.send(result);
         });
 
+        //Create visa application
+        app.post('/visaApplication', async (req, res) => {
+            const newApplication = req.body;
+            const result = await applicationCollection.insertOne(newApplication);
+            res.send(result);
+        });
+
         // Update a visa
         app.put('/all_visas/:id', async (req, res) => {
             const id = req.params.id;
             const updatedVisa = req.body;
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
-            const visa = {
+            const updatedDoc = {
                 $set: {
-                    ...updatedVisa,
+                    country_name: updatedVisa.country_name,
+                    visa_type: updatedVisa.visa_type,
+                    processing_time: updatedVisa.processing_time,
+                    fee: updatedVisa.fee,
+                    validity: updatedVisa.validity,
+                    application_method: updatedVisa.application_method,
+                    required_documents: updatedVisa.required_documents,
+                    description: updatedVisa.description,
+                    age_restriction: updatedVisa.age_restriction,
+                    country_image: updatedVisa.country_image
                 }
             };
-            const result = await visaCollection.updateOne(filter, visa, options);
+            const result = await visaCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         });
 
@@ -106,26 +135,22 @@ async function run() {
 
 
         // Delete from my visa application
-        app.delete('/my_visa_applications/:id', async (req, res) => {
+        app.delete('/visaApplication/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
+            const query = { _id: id };
             const result = await applicationCollection.deleteOne(query);
             res.send(result);
         });
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
     }
 }
 run().catch(console.dir);
-
-
-
-
 
 app.get('/', (req, res) => {
     res.send('Tenth assignment server is running')
@@ -134,3 +159,6 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`Tenth assignment Server is running on port: ${port}`)
 })
+
+
+
